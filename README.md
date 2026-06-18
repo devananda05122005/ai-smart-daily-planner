@@ -1,12 +1,12 @@
-# AI Smart Daily Planner 📅🤖
+# AI Smart Daily Planner 
 
 An AI-powered daily schedule optimization engine that takes an unstructured list of tasks, available open time slots, and peak focus hours to construct a realistic, balanced, and overload-protected daily agenda. 
 
 Built with **FastAPI**, **Pydantic v2 data layers**, and **Groq (`llama-3.1-8b-instant`)** leveraging native structural streaming tokens.
 
----
 
-## 🔥 Key Architectural Features
+
+##  Key Architectural Features
 
 * **Deterministic Data Integrity:** Leverages modern Pydantic schema validation to catch malformed front-end inputs before hitting the scheduling layer.
 * **Hardened Native JSON Mode:** Utilizes Groq structural execution parameters (`response_format={"type": "json_object"}`), entirely eliminating raw string regex parsing or LLM format hallucinations.
@@ -14,9 +14,9 @@ Built with **FastAPI**, **Pydantic v2 data layers**, and **Groq (`llama-3.1-8b-i
 * **Proactive Burnout Prevention:** Automatically injects calculated break windows between high-duration or intense cognitive task sprints.
 * **Overflow Failure Protection:** Intelligently identifies when total task duration outstrips total available free time, flagging overload states and identifying tasks to postpone.
 
----
 
-## 🛠️ Project Directory Structure
+
+##  Project Directory Structure
 
 ```text
 AI-SMART-DAILY-PLANNER/
