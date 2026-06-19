@@ -1,37 +1,34 @@
-# AI Smart Daily Planner 
+# Voice & Text Brain-Dump Engine 
 
-An AI-powered daily schedule optimization engine that takes an unstructured list of tasks, available open time slots, and peak focus hours to construct a realistic, balanced, and overload-protected daily agenda. 
+An elegant, friction-free productivity workspace that allows you to capture raw, chaotic streams of consciousness via speech or typing and instantly transforms them into a beautifully structured, organized day. 
 
-Built with **FastAPI**, **Pydantic v2 data layers**, and **Groq (`llama-3.1-8b-instant`)** leveraging native structural streaming tokens.
+By passing unstructured text or real-time microphone audio directly to **Groq's Whisper and Llama 3.1 APIs**, the backend handles cognitive organization automatically—instantly categorizing your thoughts into strict data models without the friction of manual tracking.
 
+---
 
+##  Upgraded Core Features
 
-##  Key Architectural Features
+* **Dual-Modality Entry:** Capture thoughts seamlessly via real-time browser audio streaming (`whisper-large-v3`) or through a silent, instant-type fallback box (`llama-3.1-8b-instant`).
+* **Deterministic Object Classification:** Uses highly constrained JSON compilation modes and strict Pydantic parsing contracts to prevent AI hallucinations.
+* **Intelligent Schedule Isolation:**
+* **Actionable Tasks:** Automatically extracts single-instance work items, complete with AI-generated priority tags and execution durations.
+  * **Daily Habits & Routines:** Isolates recurring behaviors and physical lifestyle loops cleanly.
+  *  **Procurement Shopping Cart:** Identifies physical logistics items and groups them into contextual purchasing categories.
+* **Executive Focus Summaries:** Generates a real-time, encouraging cognitive analysis at the top of your dashboard to lower mental fatigue and boost productivity.
 
-* **Deterministic Data Integrity:** Leverages modern Pydantic schema validation to catch malformed front-end inputs before hitting the scheduling layer.
-* **Hardened Native JSON Mode:** Utilizes Groq structural execution parameters (`response_format={"type": "json_object"}`), entirely eliminating raw string regex parsing or LLM format hallucinations.
-* **Cognitive Energy Balancing:** The engine matches incoming task priorities (`High`, `Medium`, `Low`) directly against the user's defined peak focus blocks.
-* **Proactive Burnout Prevention:** Automatically injects calculated break windows between high-duration or intense cognitive task sprints.
-* **Overflow Failure Protection:** Intelligently identifies when total task duration outstrips total available free time, flagging overload states and identifying tasks to postpone.
+---
 
-
-
-##  Project Directory Structure
+##  System Architecture & Directory Layout
 
 ```text
 AI-SMART-DAILY-PLANNER/
-│
 ├── models/
-│   └── request.py       # Pydantic data contract models
-│
+│   └── request.py       # Pydantic schema data validation contracts
 ├── services/
-│   └── planner.py       # Groq AI structural optimization engine
-│
-├── static/              # UI Presentation Tier
-│   ├── index.html       # Client interface view 
-│   ├── style.css        # Responsive layout components
-│   └── script.js        # Async UI Event Orchestrator
-│
-├── .env                 # Local secrets configuration (Ignored by Git)
-├── .gitignore           # Smart rule file patterns for runtime exclusion
-└── main.py              # FastAPI application gateway instance
+│   └── planner.py       # Groq transcription and structural JSON engine
+├── static/              # User Interface Layout Core
+│   ├── index.html       # Single-click unified input interface
+│   ├── style.css        # Responsive, sleek dark-mode styling matrix
+│   └── script.js        # Media stream capture and fetch API router
+├── .env                 # Protected access keys configuration configuration
+└── main.py              # FastAPI core framework routing controller
