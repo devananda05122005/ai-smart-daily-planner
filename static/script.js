@@ -1,158 +1,117 @@
-let tasks = [];
+let mediaRecorder;
+let audioChunks = [];
 
-function addTask() {
-    const taskName = document.getElementById("taskName").value;
-    const deadline = document.getElementById("deadline").value;
-    const duration = document.getElementById("duration").value;
-    const priority = document.getElementById("priority").value;
+const recordBtn = document.getElementById('recordBtn');
+const submitTextBtn = document.getElementById('submitTextBtn');
+const textDumpInput = document.getElementById('textDumpInput');
+const statusPulse = document.getElementById('statusPulse');
+const summaryCard = document.getElementById('summaryCard');
+const summaryText = document.getElementById('summaryText');
 
-    if (!taskName || !deadline || !duration || !priority) {
-        alert("Please fill all fields.");
+// --- Modality 1: Voice Recording Processing Loops ---
+recordBtn.addEventListener('click', async () => {
+    if (mediaRecorder && mediaRecorder.state === "recording") {
+        mediaRecorder.stop();
         return;
     }
 
-    const task = {
-        name: taskName,
-        deadline: deadline,
-        duration: duration,
-        priority: priority,
-        energy_required: priority === "High" ? "High" : "Medium"
-    };
+    audioChunks = [];
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+        
+        mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) audioChunks.push(e.data); };
 
-    tasks.push(task);
+        mediaRecorder.onstart = () => {
+            recordBtn.innerHTML = `<span class="icon">⏹️</span> Stop & Process`;
+            recordBtn.classList.add('recording');
+            statusPulse.innerText = "Listening to your thoughts...";
+            statusPulse.classList.remove('hidden');
+        };
 
-    const li = document.createElement("li");
-    li.innerHTML = `
-        <strong>${task.name}</strong> | 
-        Deadline: ${task.deadline} | 
-        Duration: ${task.duration} | 
-        Priority: ${task.priority}
-    `;
-    document.getElementById("taskList").appendChild(li);
+        mediaRecorder.onstop = async () => {
+            recordBtn.innerHTML = `<span class="icon">🎙️</span> Start Recording`;
+            recordBtn.classList.remove('recording');
+            statusPulse.innerText = "Transcribing voice via Whisper and parsing tracking contracts...";
+            
+            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+            const formData = new FormData();
+            formData.append('file', audioBlob, 'braindump.webm');
 
-    // Reset input fields cleanly
-    document.getElementById("taskName").value = "";
-    document.getElementById("deadline").value = "";
-    document.getElementById("duration").value = "";
-}
+            try {
+                const response = await fetch('/api/process-voice', { method: 'POST', body: formData });
+                if (!response.ok) throw new Error('Audio pipeline execution failure.');
+                
+                const data = await response.json();
+                renderStructuredDashboard(data);
+            } catch (err) {
+                showError("Error processing voice metrics.");
+            }
+        };
 
-async function optimizeTasks() {
-    const freeTimeInput = document.getElementById("freeTime").value;
+        mediaRecorder.start();
+    } catch (err) {
+        alert("Microphone capture access rejected.");
+    }
+});
 
-    if (!freeTimeInput) {
-        alert("Please enter your available free time slots.");
+// --- Modality 2: Plain Text Fallback Entry Point ---
+submitTextBtn.addEventListener('click', async () => {
+    const rawText = textDumpInput.value.trim();
+    if (!rawText) {
+        alert("Please dump some thoughts into the input box before parsing!");
         return;
     }
 
-    const freeTime = freeTimeInput.split(",").map(slot => slot.trim()).filter(slot => slot.length > 0);
-    const peakHours = freeTime.length > 0 ? [freeTime[0]] : [];
+    statusPulse.innerText = "Processing structured note schemas...";
+    statusPulse.classList.remove('hidden');
 
     try {
-        const response = await fetch("/optimize", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                tasks: tasks,
-                free_time: freeTime,
-                peak_hours: peakHours,
-                fixed_tasks: []
-            })
+        const response = await fetch('/api/process-text', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: rawText })
         });
 
-        const resBody = await response.json();
+        if (!response.ok) throw new Error('Text processing response fault.');
 
-        // Secure handling of the error containment envelope 
-        if (!resBody.success) {
-            document.getElementById("result").innerHTML = `
-                <div class="status-box" style="border-left: 5px solid #d9534f; background: #fdf7f7;">
-                    <strong>Optimization Failed:</strong> ${resBody.error || "Unknown server event processing problem."}
-                </div>`;
-            return;
-        }
-
-        displayResult(resBody.data);
-
-    } catch (error) {
-        document.getElementById("result").innerHTML = `
-            <div class="status-box" style="border-left: 5px solid #d9534f;">
-                <strong>Network/Client Exception:</strong> ${error.message}
-            </div>`;
+        const data = await response.json();
+        textDumpInput.value = ''; 
+        renderStructuredDashboard(data);
+    } catch (err) {
+        showError("Error parsing text metrics.");
     }
+});
+
+// --- Unified Frontend Layout Renderer ---
+function renderStructuredDashboard(data) {
+    statusPulse.classList.add('hidden');
+
+    if(data.contextual_summary) {
+        summaryCard.classList.remove('hidden');
+        summaryText.innerText = data.contextual_summary;
+    }
+
+    const taskList = document.getElementById('taskList');
+    taskList.innerHTML = data.tasks.length ? '' : `<li class="empty-msg">No structural tasks detected.</li>`;
+    data.tasks.forEach(t => {
+        taskList.innerHTML += `<li><span><strong>${t.title}</strong></span> <span style="color: var(--text-muted); font-size: 0.85rem;">[${t.priority}] · ${t.estimated_minutes}m</span></li>`;
+    });
+
+    const habitList = document.getElementById('habitList');
+    habitList.innerHTML = data.habits.length ? '' : `<li class="empty-msg">No routine structural loops detected.</li>`;
+    data.habits.forEach(h => {
+        habitList.innerHTML += `<li><span>${h.habit_name}</span> <span style="color: var(--text-muted); font-size: 0.85rem;">${h.frequency}</span></li>`;
+    });
+
+    const shoppingList = document.getElementById('shoppingList');
+    shoppingList.innerHTML = data.shopping_cart.length ? '' : `<li class="empty-msg">No clear logistics items isolated.</li>`;
+    data.shopping_cart.forEach(i => {
+        shoppingList.innerHTML += `<li><span>${i.item_name}</span> <span style="color: var(--accent); font-size: 0.8rem; font-weight: bold;">${i.category}</span></li>`;
+    });
 }
 
-function displayResult(result) {
-    let output = "";
-
-    // 1. Optimized Schedule Block
-    output += "<h2>Optimized Schedule</h2>";
-    if (result.optimized_schedule && result.optimized_schedule.length > 0) {
-        result.optimized_schedule.forEach(task => {
-            output += `
-                <div class="task-card">
-                    <h3>${task.name || "Untitled Task"}</h3>
-                    <p><strong>Deadline:</strong> ${task.deadline || "N/A"}</p>
-                    <p><strong>Duration:</strong> ${task.duration || "N/A"}</p>
-                    <p><strong>Time Slot:</strong> ${task.start_time || "N/A"} - ${task.end_time || "N/A"}</p>
-                </div>`;
-        });
-    } else {
-        output += "<p>No tasks scheduled.</p>";
-    }
-
-    // 2. Break Management Block
-    output += "<h2>Break Suggestions</h2>";
-    if (result.break_suggestions && result.break_suggestions.length > 0) {
-        result.break_suggestions.forEach(item => {
-            output += `
-                <div class="task-card" style="border-left-color: #2196F3;">
-                    <p><strong>Timing:</strong> ${item.start_time || "N/A"} - ${item.end_time || "N/A"}</p>
-                    <p><strong>Reason:</strong> ${item.reason || "Recovery window"}</p>
-                </div>`;
-        });
-    }
-
-    // 3. Priority Order Sequence List
-    output += "<h2>Priority Sequencing</h2><ul>";
-    (result.priority_order || []).forEach(taskName => {
-        output += `<li>${taskName}</li>`;
-    });
-    output += "</ul>";
-
-    // 4. Focus Block Segments
-    output += "<h2>Focus Blocks</h2>";
-    (result.focus_blocks || []).forEach(block => {
-        output += `
-            <div class="task-card" style="border-left-color: #673AB7;">
-                <h3>${block.name || "Deep Work Segment"}</h3>
-                <p><strong>Duration:</strong> ${block.start_time || "N/A"} - ${block.end_time || "N/A"}</p>
-            </div>`;
-    });
-
-    // 5. Overflow Management State
-    const overloadText = result.overload_detected ? "Yes - Task load exceeds available slots" : "No";
-    output += `
-        <h2>Overload Status</h2>
-        <div class="status-box">${overloadText}</div>`;
-
-    if (result.postponed_tasks && result.postponed_tasks.length > 0) {
-        output += "<h3>Postponed Tasks</h3><ul>";
-        result.postponed_tasks.forEach(task => { output += `<li>${task}</li>`; });
-        output += "</ul>";
-    }
-
-    // 6. Analytics Scores
-    output += `
-        <h2>Focus Score Prediction</h2>
-        <div class="score-box">${result.focus_score_prediction || "N/A"}</div>
-        <h2>Productivity Score</h2>
-        <div class="score-box">${result.productivity_score || "N/A"}</div>`;
-
-    // 7. Planner Decision Logic Logs
-    output += "<h2>AI Strategy Logic</h2><ul>";
-    (result.reasoning || []).forEach(reason => {
-        output += `<li>${reason}</li>`;
-    });
-    output += "</ul>";
-
-    document.getElementById("result").innerHTML = output;
+function showError(msg) {
+    statusPulse.innerText = msg;
+    statusPulse.style.color = "var(--priority-high)";
 }

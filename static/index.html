@@ -3,36 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Smart Planner</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <title>Voice Brain-Dump Engine</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <div class="app-container">
+        <header>
+            <h1>Voice Brain-Dump Engine </h1>
+            <p>Don't let your productive thoughts slip away. Tap, stream your mind, or type it out.</p>
+        </header>
 
-<div class="container">
-    <h1>AI Smart Daily Planner</h1>
-    
-    <input type="text" id="taskName" placeholder="Task Name">
-    <input type="text" id="deadline" placeholder="Deadline (e.g., 5 PM)">
-    <input type="text" id="duration" placeholder="Duration (e.g., 1.5 hours)">
-    
-    <select id="priority">
-        <option>High</option>
-        <option>Medium</option>
-        <option>Low</option>
-    </select>
-    
-    <button onclick="addTask()">Add Task</button>
-    
-    <textarea id="freeTime" placeholder="Enter comma-separated time blocks (Example: 9 AM - 12 PM, 1 PM - 5 PM, 6 PM - 9 PM)"></textarea>
-    
-    <h2>Task List</h2>
-    <ul id="taskList"></ul>
-    
-    <button onclick="optimizeTasks()">Optimize Schedule</button>
-    
-    <div id="result"></div>
-</div>
+        <main class="control-panel">
+            <div class="input-container-box">
+                <div class="button-wrapper">
+                    <button id="recordBtn" class="mic-btnBtn">
+                        <span class="icon">🎙️</span> Start Recording
+                    </button>
+                </div>
 
-<script src="/static/script.js"></script>
+                <div class="divider"><span>OR</span></div>
+
+                <div class="text-dump-wrapper">
+                    <textarea id="textDumpInput" placeholder="Type your chaotic thought stream here... e.g., Need to finish my database system by tonight, pick up groceries, and hit badminton tomorrow..."></textarea>
+                    <button id="submitTextBtn" class="submit-text-btn">Structure My Notes</button>
+                </div>
+                
+                <div id="statusPulse" class="status-indicator hidden">Listening to your thoughts...</div>
+            </div>
+
+            <div id="summaryCard" class="summary-card hidden">
+                <h3>💡 Executive Focus Summary</h3>
+                <p id="summaryText"></p>
+            </div>
+
+            <div class="results-grid">
+                <div class="data-card">
+                    <h2>📋 Actionable Tasks</h2>
+                    <ul id="taskList" class="placeholder-list"><li class="empty-msg">Your tasks will materialize here...</li></ul>
+                </div>
+
+                <div class="data-card">
+                    <h2>🔄 Daily Habits & Routines</h2>
+                    <ul id="habitList" class="placeholder-list"><li class="empty-msg">Your recurring loops will parse here...</li></ul>
+                </div>
+
+                <div class="data-card">
+                    <h2>🛒 Procurement Shopping Cart</h2>
+                    <ul id="shoppingList" class="placeholder-list"><li class="empty-msg">Physical items to buy will categorize here...</li></ul>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="script.js"></script>
 </body>
 </html>

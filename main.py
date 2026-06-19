@@ -1,38 +1,48 @@
-from fastapi import FastAPI
+import os
+import shutil
+from fastapi import FastAPI, UploadFile, File, HTTPException, Body
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
-from models.request import PlannerRequest
-from services.planner import optimize_schedule
+from dotenv import load_dotenv
 
-app = FastAPI()
+# Initialize environment vectors safely
+load_dotenv()
 
-# Mount static folder
-app.mount("/static", StaticFiles(directory="static"), name="static")
+from models.request import OrganizedBrainDump
+from services.planner import process_voice_brain_dump, process_text_brain_dump
 
-@app.get("/")
-def home():
-    return FileResponse("static/index.html")
+app = FastAPI(title="AI Hybrid Voice & Text Brain-Dump Engine")
 
-@app.post("/optimize")
-def optimize(data: PlannerRequest):
-    # .model_dump() replaces outdated .dict() in Pydantic v2
-    request_data = data.model_dump()
-    
-    result = optimize_schedule(
-        tasks=request_data["tasks"],
-        free_time=request_data["free_time"],
-        peak_hours=request_data["peak_hours"],
-        fixed_tasks=request_data["fixed_tasks"]
-    )
-    
-    # Catching background errors explicitly to alert UI engine cleanly
-    if isinstance(result, dict) and "error" in result:
-        return {
-            "success": False,
-            "error": result["error"]
-        }
+TEMP_DIR = "temp_audio"
+os.makedirs(TEMP_DIR, exist_ok=True)
+
+@app.post("/api/process-voice", response_model=OrganizedBrainDump)
+async def handle_voice_processing(file: UploadFile = File(...)):
+    """Handles incoming raw microphone audio files, processes, and purges the file artifact."""
+    suffix = os.path.splitext(file.filename)[1] if file.filename else ".webm"
+    temp_file_path = os.path.join(TEMP_DIR, f"upload_{os.getpid()}{suffix}")
+
+    try:
+        with open(temp_file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
         
-    return {
-        "success": True,
-        "data": result
-    }
+        return process_voice_brain_dump(temp_file_path)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if os.path.exists(temp_file_path):
+            os.remove(temp_file_path)
+
+@app.post("/api/process-text", response_model=OrganizedBrainDump)
+async def handle_text_processing(payload: dict = Body(...)):
+    """Accepts manual text payloads directly from the frontend interface input box."""
+    raw_text = payload.get("text", "").strip()
+    if not raw_text:
+        raise HTTPException(status_code=400, detail="Text payload cannot be empty.")
+    
+    try:
+        return process_text_brain_dump(raw_text)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Mount static frontend architecture views
+app.mount("/", StaticFiles(directory="static", html=True), name="static")

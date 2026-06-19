@@ -1,20 +1,25 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Optional
 
-class Task(BaseModel):
-    name: str
-    deadline: str
-    duration: str
-    priority: str
-    energy_required: Optional[str] = "Medium"
+class ExtractedTask(BaseModel):
+    title: str
+    priority: Optional[str] = "Medium"
+    estimated_minutes: Optional[int] = 30
 
-class FixedTask(BaseModel):
-    name: str
-    start_time: str
-    end_time: str
+class ExtractedHabit(BaseModel):
+    habit_name: str
+    frequency: Optional[str] = "Daily"
 
-class PlannerRequest(BaseModel):
-    tasks: List[Task]
-    free_time: List[str]
-    peak_hours: List[str] = []
-    fixed_tasks: List[FixedTask] = []
+class ExtractedItem(BaseModel):
+    item_name: str
+    category: Optional[str] = "General"
+
+class OrganizedBrainDump(BaseModel):
+    # Using default values guarantees Pydantic won't crash if the AI omits a section
+    tasks: List[ExtractedTask] = []
+    habits: List[ExtractedHabit] = []
+    shopping_cart: List[ExtractedItem] = []
+    contextual_summary: Optional[str] = "Brain dump parsed successfully."
+
+class TextInputPayload(BaseModel):
+    text: str
